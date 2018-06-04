@@ -13,7 +13,7 @@ class SquareGrid:
 
     def neighbors(self, id):
         (x, y) = id
-        results = [(x + 1, y), (x + 1, y - 1), (x, y - 1), (x - 1, y - 1), (x - 1, y), (x - 1, y + 1), (x, y + 1), (x + 1, y + 1)]
+        results = [(x + 1, y), (x + 1, y - 1), (x, y - 1), (x - 1, y - 1), (x - 1, y), (x - 1, y + 1), (x, y + 1), (x + 1, y + 1)] # 8 directions
         if (x + y) % 2 == 0:
             results.reverse()
         results = filter(self.in_bounds, results)
@@ -26,4 +26,4 @@ class GridWithWeights(SquareGrid):
         self.weights = {}
 
     def cost(self, from_node, to_node):
-        return self.weights.get(to_node, 1)
+        return self.weights.get(to_node, 1) # default get 1
