@@ -4,4 +4,4 @@ README: [ENGLISH](https://github.com/alexwoo1900/kara/blob/master/README.md) | [
 ### Introduction
 File | Description
 ---|---
-graph.py | some grid classes
+pyqt_widget.md | Qt Widget
