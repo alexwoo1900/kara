@@ -321,7 +321,45 @@ child_layout2.setSpacing(10)
 
 ### 图像
 
-#### 与矩阵相互转换
+#### 初始化图像对象
+
+##### QImage
+
+```python
+image1 = QImage(path)                                                               # optional: QImage(w, h, format)
+```
+
+##### QPixmap
+
+```python
+image2 = QPixmap()                                                                  # optional: QPixmap(w, h), QPixmap.fromImage(image1)
+```
+
+#### 原图转灰度图
+
+##### convertToFormat
+
+```python
+image = QImage(path)
+gray_image = image.convertToFormat(QImage.Format_Grayscale8, Qt.AutoColor)
+```
+
+##### through ndarray(OpenCV)
+
+```python
+matrix = qimage2ndarray.rgb_view(image)
+gray_matrix = cv.cvtColor(matrix, cv.COLOR_RGB2GRAY)
+gray_image = QImage(gray_matrix.data, gray_matrix.shape[1], gray_matrix.shape[0], QImage.Format_Grayscale8)
+```
+
+#### 原图转黑白二值图
+
+##### through ndarray(OpenCV)
+
+```python
+_, binary_matrix = cv.threshold(matrix, threshold_value, 255, cv.THRESH_BINARY)
+binary_image = QImage(binary_matrix.data, binary_matrix.shape[1], binary_matrix.shape[0], QImage.Format_Grayscale8)
+```
 
 ### 绘制
 
