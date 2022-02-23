@@ -5,11 +5,18 @@
 #### 对话框
 
 ```python
-# get path
+# init & get path
 path, _ = QFileDialog.getOpenFileName(parent, "load", "", "image (*.jpg *.png)")    # optional: getSaveFileName
 ```
 
 #### 文本框
+
+```python
+# init
+text_edit = QTextEdit()
+text_edit.currentCharFormatChanged.connect(apply_new_char_format)
+text_edit.cursorPositionChanged.connect(apply_new_block_format_show)
+```
 
 ```python
 # apply alignment
@@ -19,12 +26,32 @@ text_edit.setAlignment(Qt.AlignLeft | Qt.AlignAbsolute)                         
 ```python
 # apply char format
 fmt = QTextCharFormat()
-fmt.setFontFamily(f)                                                                # optional: setFontPointSize, setForeground, setFontWeight, setFontItalic, setFontUnderline
+fmt.setFontFamily(f)                                                                # optional: setFontPointSize, setForeground, setFontWeight, setFontItalic, setFontUnderline, setProperty
 cursor = text_edit.textCursor()
 if not cursor.hasSelection():
     cursor.select(QTextCursor.WordUnderCursor)
 cursor.mergeCharFormat(fmt)
 text_edit.mergeCurrentCharFormat(fmt)
+```
+
+```python
+# apply block format
+cursor = text_edit.textCursor()
+cursor.beginEditBlock()
+block_fmt = cursor.blockFormat()
+block_fmt.setHeadingLevel(heading_level)                                            # optional: setMarker
+cursor.setBlockFormat(block_fmt)
+cursor.endEditBlock()
+```
+
+```python
+# text to image
+doc = text_editor.document()
+image = QImage(doc.idealWidth(), doc.size().height(), QImage.Format_ARGB32)
+image.fill(QColor(255, 255, 255, 0))
+painter = QPainter(image)
+doc.drawContents(painter, QRectF(0, 0, doc.idealWidth(),  doc.size().height()))
+painter.end()
 ```
 
 #### 下拉框
