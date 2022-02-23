@@ -122,33 +122,33 @@ view.setScene(scene)
 view.setSceneRect(rect)
 
 '''
-setSceneRect中的x、y参数代表着view origin相对于scene origin的偏移
-boundingRect中的x、y参数代表着view origin相对于display top left的偏移
+setSceneRect中的x、y参数代表着viewport origin相对于scene origin的偏移
+boundingRect中的x、y参数代表着viewport origin相对于display top left的偏移
 
 EX1:
-scene.setSceneRect(0, 0, w, h)                 scene.setSceneRect(-100, -100, w, h)                       scene.setSceneRect(-100, -100, w, h)
-item.boundingRect() == (150, 150, w, h)        item.boundingRect() == (150, 150, w, h)                    item.boundingRect() == (0, 0, w, h)
+scene.setSceneRect(0, 0, w, h)                    scene.setSceneRect(-100, -100, w, h)                       scene.setSceneRect(-100, -100, w, h)
+item.boundingRect() == (150, 150, w, h)           item.boundingRect() == (150, 150, w, h)                    item.boundingRect() == (0, 0, w, h)
 
-display top left, (-150, -150) in view coord   display top-left, (-150, -150) in view coord               display top-left & view origin
+display top left, (-150, -150) in viewport coord  display top-left, (-150, -150) in viewport coord           display top-left & viewport origin
     +---------------------->                      +------------------------>                                  +------------------------>
-    |   view & scene origin                       |                                                           | scene origin
+    |   viewport & scene origin                   |                                                           | scene origin
     |       |                                     |                                                           |       |
-    |       v                                     |   view origin                                             |       v
+    |       v                                     |   viewport origin                                         |       v
     |       ****                                  |       +---------------->                                  |       ****
-    |       **** (item)                           |       |    scene origin, (100, 100) in view coord         |       **** (item)
+    |       **** (item)                           |       |    scene origin, (100, 100) in viewport coord     |       **** (item)
     |                                             |       |         |                                         |
     |                                             |       |         v                                         |
     |                                             |       |         ****                                      |
     v                                             v       v         **** (item)                               v
 
 EX2:
-scene & view unset scene rect
+viewport & scene unset scene rect
 item.boundingRect() == (100, 100, w, h)
 item2.boundingRect() == (400, 400, w, h)
 
-display top left, scene origin, (-100, -100) in view coord
+display top left, scene origin, (-100, -100) in viewport coord
     +---------------------->
-    |   view origin
+    |   viewport origin
     |      |
     |      v
     |      +--------------+
@@ -166,6 +166,23 @@ scene.setSceneRect(100, 100, w, h)
 view.setSceneRect(0, 0, w, h)
 scene rect overrided by view's setting
 '''
+```
+
+```python
+# scene coord to item coord
+p = item.mapFromScene(point)
+# item coord to scene coord
+p = item.mapToScene(point)
+# scene coord to viewport coord
+p = view.mapFromScene(point)
+# viewport coord to scene coord
+p = view.mapToScene(point)
+```
+
+```python
+# add item
+item = QGraphicsItem()
+scene.addItem(item)
 ```
 
 #### 工具栏
