@@ -112,6 +112,62 @@ table.setEditTriggers(QAstractItemView.DoubleClicked)
 table.setCellWidget(r_idx, c_idx, widget)
 ```
 
+#### 图像视图
+
+```python
+# init
+view = QGraphicsView()
+scene = QGraphicsScene()
+view.setScene(scene)
+view.setSceneRect(rect)
+
+'''
+setSceneRect中的x、y参数代表着view origin相对于scene origin的偏移
+boundingRect中的x、y参数代表着view origin相对于display top left的偏移
+
+EX1:
+scene.setSceneRect(0, 0, w, h)                 scene.setSceneRect(-100, -100, w, h)                       scene.setSceneRect(-100, -100, w, h)
+item.boundingRect() == (150, 150, w, h)        item.boundingRect() == (150, 150, w, h)                    item.boundingRect() == (0, 0, w, h)
+
+display top left, (-150, -150) in view coord   display top-left, (-150, -150) in view coord               display top-left & view origin
+    +---------------------->                      +------------------------>                                  +------------------------>
+    |   view & scene origin                       |                                                           | scene origin
+    |       |                                     |                                                           |       |
+    |       v                                     |   view origin                                             |       v
+    |       ****                                  |       +---------------->                                  |       ****
+    |       **** (item)                           |       |    scene origin, (100, 100) in view coord         |       **** (item)
+    |                                             |       |         |                                         |
+    |                                             |       |         v                                         |
+    |                                             |       |         ****                                      |
+    v                                             v       v         **** (item)                               v
+
+EX2:
+scene & view unset scene rect
+item.boundingRect() == (100, 100, w, h)
+item2.boundingRect() == (400, 400, w, h)
+
+display top left, scene origin, (-100, -100) in view coord
+    +---------------------->
+    |   view origin
+    |      |
+    |      v
+    |      +--------------+
+    |      |******        |
+    |      |******        |
+    |      |******        | <---------scene rect == largest bounding rect of all items
+    |      |        ******|
+    |      |        ******|
+    |      |        ******|
+    |      +--------------+
+    v
+
+EX3:
+scene.setSceneRect(100, 100, w, h)
+view.setSceneRect(0, 0, w, h)
+scene rect overrided by view's setting
+'''
+```
+
 #### 工具栏
 
 ```python
@@ -210,6 +266,23 @@ layout的sizePolicy         widget默认的sizePolicy
 以sizePolicy是Preferred的QTextEdit作为widget为例：
 
 ```python
+child_layout1 = QVBoxLayout()
+child_layout1.addWidget(widget1)
+child_layout1.addWidget(widget2)
+child_layout1.setStretchFactor(widget1, 3)
+child_layout1.setStretchFactor(widget2, 1)
+
+child_layout2 = QVBoxLayout()
+child_layout2.addWidget(widget3)
+child_layout2.addWidget(widget4)
+
+parent_layout = QHBoxLayout()
+parent_layout.addLayout(child_layout1)
+parent_layout.addLayout(child_layout2)
+parent_layout.setStretchFactor(child_layout1, 2)
+parent_layout.setStretchFactor(child_layout2, 1)
+parent_widget.setLayout(parent_layout)
+
 '''
                             Expanded
                                |
@@ -233,28 +306,13 @@ v       ||+------------------------------+|| ||+-----------+||
 
         |<---------------2---------------->| |<------1------>|
 '''
-
-child_layout1 = QVBoxLayout()
-child_layout1.addWidget(widget1)
-child_layout1.addWidget(widget2)
-child_layout1.setStretchFactor(widget1, 3)
-child_layout1.setStretchFactor(widget2, 1)
-
-child_layout2 = QVBoxLayout()
-child_layout2.addWidget(widget3)
-child_layout2.addWidget(widget4)
-
-parent_layout = QHBoxLayout()
-parent_layout.addLayout(child_layout1)
-parent_layout.addLayout(child_layout2)
-parent_layout.setStretchFactor(child_layout1, 2)
-parent_layout.setStretchFactor(child_layout2, 1)
-parent_widget.setLayout(parent_layout)
 ```
 
 #### 对齐
 
 ```python
+child_layout1.addWidget(child_widget1, alignment=Qt.AlignCenter)
+
 '''
             Align center, noexpand
                        |
@@ -276,14 +334,16 @@ parent layout          |
 |+--------------------------------+| |+-------------+| 
 +----------------------------------+ +---------------+ 
 '''
-
-child_layout1.addWidget(child_widget1, alignment=Qt.AlignCenter)
 ```
 
 
 #### 间距
 
 ```python
+child_layout2.addWidget(child_widget3)
+child_layout2.addSpacing(40)
+child_layout2.addWidget(child_widget4)
+
 '''
 parent layout          
 +----------------------------------+ +---------------+
@@ -303,13 +363,14 @@ parent layout
 |+--------------------------------+| |+-------------+|
 +----------------------------------+ +---------------+
 '''
-
-child_layout2.addWidget(child_widget3)
-child_layout2.addSpacing(40)
-child_layout2.addWidget(child_widget4)
 ```
 
 ```python
+child_layout2.addWidget(child_widget3)
+child_layout2.addWidget(child_widget4)
+child_layout2.addWidget(child_widget5)
+child_layout2.setSpacing(10)
+
 '''        
 +---------------+
 |+-------------+|
@@ -331,18 +392,44 @@ child_layout2.addWidget(child_widget4)
 |+-------------+|
 +---------------+
 '''
-
-child_layout2.addWidget(child_widget3)
-child_layout2.addWidget(child_widget4)
-child_layout2.addWidget(child_widget5)
-child_layout2.setSpacing(10)
 ```
 
 ### 画笔
 
 ```python
-# draw path
+# init
 painter = QPainter(device)
+```
+
+```python
+# use pen(defines how to draw lines and outlines, also defines the text color)
+pen = QPen(Qt.black, 1, Qt.SolidLine, Qt.RoundCap, Qt.RoundJoin)                    # optional: pen.setStyle, pen.setWidth, pen.setCapStyle, pen.setJoinStyle
+painter.setPen(pen)
+```
+
+```python
+# use brush(defines how shapes are filled)
+brush = QBrush(gradient)                                                            # optional: brush.setColor, brush.setTexture, brush.setStyle
+painter.setBrush(brush)
+```
+
+```python
+# draw image
+painter.drawImage(rect, image)                                                      # optional: drawPixmap
+# draw text
+painter.drawText(point, text)                                                       # optional: drawText(x1, y1, text), drawStaticText
+# draw point
+painter.drawPoint(point)                                                            # optional: drawPoint(x1, y1), drawPoints
+# draw line
+painter.drawLine(line)                                                              # optional: drawLine(x1, y1, x2, y2), drawLines
+# draw rectangle
+painter.drawRect(rect)                                                              # optional: drawRect(x1, y1, x2, y2), drawRects
+# draw ellipse
+painter.drawEllipse(rect)                                                           # optional: drawEllipse(x1, y1, x2, y2)
+```
+
+```python
+# draw path
 path = QPainterPath()
 path.moveTo(p0.x, p0.y)
 path.lineTo(p1.x, p1.y)                                                             # optional: cubicTo(c1.x, c1.y, c2.x, c2.y, p1.x, p1.y)
