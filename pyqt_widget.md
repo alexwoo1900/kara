@@ -120,54 +120,6 @@ view = QGraphicsView()
 scene = QGraphicsScene()
 view.setScene(scene)
 view.setSceneRect(rect)
-
-关于sceneRect的概念，我们可以简记为：
-setSceneRect中的x、y参数代表着viewport origin相对于scene origin的偏移  
-boundingRect中的x、y参数代表着viewport origin相对于display top left的偏移  
-更具体的情况参见附录。
-
-'''
-EX1:
-scene.setSceneRect(0, 0, w, h)                    scene.setSceneRect(-100, -100, w, h)                       scene.setSceneRect(-100, -100, w, h)
-item.boundingRect() == (150, 150, w, h)           item.boundingRect() == (150, 150, w, h)                    item.boundingRect() == (0, 0, w, h)
-
-display top left, (-150, -150) in viewport coord  display top-left, (-150, -150) in viewport coord           display top-left & viewport origin
-    +---------------------->                      +------------------------>                                  +------------------------>
-    |   viewport & scene origin                   |                                                           | scene origin
-    |       |                                     |                                                           |       |
-    |       v                                     |   viewport origin                                         |       v
-    |       ****                                  |       +---------------->                                  |       ****
-    |       **** (item)                           |       |    scene origin, (100, 100) in viewport coord     |       **** (item)
-    |                                             |       |         |                                         |
-    |                                             |       |         v                                         |
-    |                                             |       |         ****                                      |
-    v                                             v       v         **** (item)                               v
-
-EX2:
-viewport & scene unset scene rect
-item.boundingRect() == (100, 100, w, h)
-item2.boundingRect() == (400, 400, w, h)
-
-display top left, scene origin, (-100, -100) in viewport coord
-    +---------------------->
-    |   viewport origin
-    |      |
-    |      v
-    |      +--------------+
-    |      |******        |
-    |      |******        |
-    |      |******        | <---------scene rect == largest bounding rect of all items
-    |      |        ******|
-    |      |        ******|
-    |      |        ******|
-    |      +--------------+
-    v
-
-EX3:
-scene.setSceneRect(100, 100, w, h)
-view.setSceneRect(0, 0, w, h)
-scene rect overrided by view's setting
-'''
 ```
 
 ```python
@@ -527,60 +479,36 @@ def paste():
 
 ### 附录
 
-#### sceneRect与boundingRect
+#### sceneRect
 
-首先讲讲viewport坐标系和scene坐标系是怎么建立联系的。
+首先来了解一下sceneRect是怎么起作用的。  
 
-在此之前，我们先阐述清楚viewport和window的概念：
-viewport表示某个矩形区域的物理坐标（绘图设备上的位置），window表示该区域的逻辑坐标（方便在代码中使用的位置），两者都可以由用户设置。
-```cpp
-// set window
-painter.setWindow(x, y, w, h);
-// set viewport
-painter.setViewport(x, y, w, h);
-```
-由于后者是设备无关的信息，所以物理坐标系和逻辑坐标系不一定重合，当两者不重合时，Qt会作window-viewport转换以满足我们的编码预期。
-**window-viewport转换只是作线性变换，该过程并不进行裁剪，所以即使某个点的逻辑坐标已超出window的范围，它仍会被线性变换到viewport上。**
+在此之前，我们先阐述两个概念：viewport和window。  
+viewport表示某个矩形区域的物理坐标（QGraphicsView之类的绘图设备上的位置，），window表示该区域的逻辑坐标（QGraphicsScene之类的虚拟对象中位置），两者都可以由用户设置。  
 
-而setWorldTransform使用的正是逻辑坐标系（世界坐标），因此我们很容易理解QGraphicsScene源码中的渲染部分：
+由于后者是设备无关的信息，所以物理坐标系和逻辑坐标系不一定重合，当两者不重合时，Qt会作window-viewport转换以满足我们的编码预期。  
+**window-viewport转换只是作线性变换，该过程并不进行裁剪，所以即使某个点的逻辑坐标已超出window的范围，它仍会被线性变换到viewport上。**  
 
-```cpp
-void QGraphicsScene::render(QPainter *painter, const QRectF &target, const QRectF &source,
-                            Qt::AspectRatioMode aspectRatioMode)
-{
-    // Default source rect = scene rect
-    QRectF sourceRect = source;
-    if (sourceRect.isNull())
-        sourceRect = sceneRect();
+将window代换成scene，这个过程如下图所示：
 
-    // Default target rect = device rect
-    QRectF targetRect = target;
-    if (targetRect.isNull()) {
-        if (painter->device()->devType() == QInternal::Picture)
-            targetRect = sourceRect;
-        else
-            targetRect.setRect(0, 0, painter->device()->width(), painter->device()->height());
-    }
-
-    // other codes...
-
-    QTransform painterTransform;
-    painterTransform *= QTransform()
-                        .translate(targetRect.left(), targetRect.top())
-                        .scale(xratio, yratio)
-                        .translate(-sourceRect.left(), -sourceRect.top());
-    painter->setWorldTransform(painterTransform, true);
-
-    // other codes...
-
-    // Render the scene.
-    drawBackground(painter, sourceRect);
-    drawItems(painter, numItems, itemArray, styleOptionArray);
-    drawForeground(painter, sourceRect);
-
-    // remaining codes...
-}
+```text
+            |                               o
+   .........+.........                      +--------------------------->
+   .        |        .                      |   item                  .
+   .  item  |        .                      |                         .
+   .        |o       .                      |                         .vbar
+------------+-------------->     Convert    |                         .
+   .        |        .          ========>   |                         .
+   .        |        .                      |..........................
+   .        |        .                      |          hbar
+   .........+.........                      |
+            |                               |
+            v                               v
+ Scene Coordinate System                    Viewport Coordinate System
+  (in QGraphicsScene)                           (in QGraphicsView)
 ```
 
-为了简化说明，我们假定逻辑坐标系和物理坐标系重合，即window坐标系等同于viewport坐标系。  
-上面的代码证明了**painter将viewport坐标系上的(targetRect.left() - sourceRect.left(), targetRect.top() - sourceRect.top())作为scene坐标系的原点**。
+setSceneRect设置的区域即为左图点围住的区域，它最终会线性变换到viewport坐标系中。  
+在不对viewport坐标范围进行限制的情况下，这是一个“矩形”到“矩形”的过程，在计算坐标的过程中，我们可以简单地将选中区域和viewport坐标系两者的左上角重合...
+
+另外要注意的是，**QGraphicsItem对象以图元中心为原点**。
